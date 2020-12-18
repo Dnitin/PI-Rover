@@ -2,13 +2,14 @@ import RPi.GPIO as GPIO
 
 
 class Wheel:
-    def __init__(self, pin_a, pin_b, pin_en):
+    def __init__(self, pin_a, pin_b, pin_en, speed=30):
         self.pin_a = pin_a
         self.pin_b = pin_b
         self.enable = pin_en
         self.init_pins()
         self.pwm = GPIO.PWM(self.enable, 500)
-        self.pwm.start(99)
+        self.stop()
+        self.pwm.start(speed)
 
     def init_pins(self):
         GPIO.setup(self.pin_a, GPIO.OUT)

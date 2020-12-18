@@ -42,6 +42,7 @@ class Vision:
     def get_main_contour_params(self):
         # Capture and gray conversion
         frame = self.get_current_frame()
+        cv2.imshow("Test_fame",frame)
         roi = self.get_roi(frame)
         gray_image = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
@@ -51,11 +52,11 @@ class Vision:
         mask = cv2.erode(bw_img, None, iterations=3)
         mask = cv2.dilate(mask, None, iterations=3)
 
-        _, contours, _ = cv2.findContours(mask.copy(), 1, cv2.CHAIN_APPROX_NONE)
-        cx = cy = sides_approx = area = None
+        contours, hierarchy = cv2.findContours(mask.copy(), 1, cv2.CHAIN_APPROX_NONE)
+        cx = cy = sides_approx = area = 0
         if len(contours) > 0:
             main_contour = max(contours, key=cv2.contourArea)
-            sides_approx = cv2.approxPolyDP(main_contour, 0.01 * cv2.arcLength(main_contour, True), True)
+            sides_approx = len(cv2.approxPolyDP(main_contour, 0.01 * cv2.arcLength(main_contour, True), True))
             area = cv2.contourArea(main_contour)
             cx = int(cv2.moments(main_contour)['m10'] / cv2.moments(main_contour)['m00'])
             cy = int(cv2.moments(main_contour)['m01'] / cv2.moments(main_contour)['m00'])

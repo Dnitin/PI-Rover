@@ -79,12 +79,12 @@ class Robot:
                 self.__follow_line(cent_x)
 
     def __follow_line(self, centroid):
-        if centroid >= 320:
-            self.turn_right()
-        if 320 > centroid > 180:
-            self.move_forward()
-        if centroid <= 180:
+        if centroid >= 350:
             self.turn_left()
+        if 350 > centroid > 160:
+            self.move_forward()
+        if centroid <= 160:
+            self.turn_right()
 
     def __handle_intersection(self, instruction):
         cent_x, cent_y, sides, area = self.eye.get_main_contour_params()
@@ -97,23 +97,13 @@ class Robot:
         self.stop_movement()
         time.sleep(3)
         while True:
+            self.move_forward()
             cent_x, cent_y, sides, area = self.eye.get_main_contour_params()
-            utils.show("Number of sides currently visible: ", sides)
-            if sides > 8:
-                self.stop_movement() 
+            utils.show("Number of sides currently visible: ", len(sides))
+            if len(sides) > 4:
+                self.stop_movement()
                 time.sleep(3)
-                while True:
-                    cx,_,s,_ = self.eye.get_main_contour_params()
-                    if s > 4:
-                        self.move_forward()
-                    else:
-                        self.__handle_left_turn
-                        break
-                return
-            else:
-                self.__follow_line(cent_x)
-
-            utils.show(chr(13))
+            utils.show(char(13))
                 
                 #self.__handle_intersection(Instruction.TURN_RIGHT)
 

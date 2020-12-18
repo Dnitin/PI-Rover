@@ -1,4 +1,3 @@
-
 def show(*args):
     print("........", end="")
     for arg in args:

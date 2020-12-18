@@ -7,7 +7,6 @@ from vision import Vision
 
 
 class Robot:
-
     def __init__(self):
         GPIO.setmode(GPIO.BOARD)
         self.left_wheel = Wheel(40, 37, 33)

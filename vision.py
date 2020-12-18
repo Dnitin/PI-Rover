@@ -52,22 +52,22 @@ class Vision:
         mask = cv2.dilate(mask, None, iterations=3)
 
         _, contours, _ = cv2.findContours(mask.copy(), 1, cv2.CHAIN_APPROX_NONE)
-        cx = cy = sides_approx = None
+        cx = cy = sides_approx = area = None
         if len(contours) > 0:
             main_contour = max(contours, key=cv2.contourArea)
             sides_approx = cv2.approxPolyDP(main_contour, 0.01 * cv2.arcLength(main_contour, True), True)
-
+            area = cv2.contourArea(main_contour)
             cx = int(cv2.moments(main_contour)['m10'] / cv2.moments(main_contour)['m00'])
             cy = int(cv2.moments(main_contour)['m01'] / cv2.moments(main_contour)['m00'])
 
             self.draw_contour(contours, roi, cx, cy)
 
         cv2.imshow('roi_frame', roi)
-        return cx, cy, sides_approx
+        return cx, cy, sides_approx, area
 
     def start_seeing(self):
         while True:
-            cx, cy, s = self.get_main_contour_params()
+            cx, cy, s, area = self.get_main_contour_params()
             utils.show("cx :" + str(cx) + " cy: " + str(cy) + " sides : " + str(s))
             utils.show(chr(13))
             if cv2.waitKey(1) & 0xFF == ord('q'):

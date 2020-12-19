@@ -12,11 +12,15 @@ from vision import Vision
 class Robot:
     def __init__(self):
         GPIO.setmode(GPIO.BOARD)
-        self.left_wheel = Wheel(37, 40, 33, speed=35)
-        self.right_wheel = Wheel(38, 36, 32, speed=35)
+        self.top_speed = 95
+        self.left_wheel = Wheel(37, 40, 33, speed=self.top_speed)
+        self.right_wheel = Wheel(38, 36, 32, speed=self.top_speed)
         self.eye = Vision()
         self.joy = xbox.Joystick()
         self.grid = Grid(4, 6)
+        self.kp = 0.75
+        self.ki = 1
+        self.kd = 1
 
     def move_forward(self):
         self.right_wheel.forward()
@@ -26,12 +30,18 @@ class Robot:
         self.right_wheel.back()
         self.left_wheel.back()
 
-    def turn_left(self):
+    def turn_left(self, hard=False):
         self.right_wheel.forward()
-        self.left_wheel.stop()
+        if hard:
+            self.left_wheel.back()
+        else:
+            self.left_wheel.stop()
 
-    def turn_right(self):
-        self.right_wheel.stop()
+    def turn_right(self, hard=False):
+        if hard:
+            self.right_wheel.back()
+        else:
+            self.right_wheel.stop()
         self.left_wheel.forward()
 
     def stop_movement(self):
@@ -70,54 +80,60 @@ class Robot:
     def explore_grid(self):
         instruction = Instruction.STRAIGHT
         while instruction != Instruction.STOP:
-            cent_x, cent_y, sides, area = self.eye.get_main_contour_params()
+            centroid, area, sides, angle, is_obstacle = self.eye.what_do_i_see()
             if sides > 4:
                 time.sleep(1)
                 instruction = self.grid.get_next_instruction(False)
-                self.__handle_intersection(instruction)
+                self.handle_intersection(instruction)
             else:
-                self.__follow_line(cent_x)
+                self.__follow_line(centroid, angle)
 
-    def __follow_line(self, centroid):
-        if centroid >= 320:
-            self.turn_right()
-        if 320 > centroid > 180:
-            self.move_forward()
-        if centroid <= 180:
+    def __follow_line(self, centroid, angle):
+        # error = int(320 - centroid[0])*self.kp
+        if centroid[0] >= 250:
             self.turn_left()
+        if 250 > centroid[0] > 240:
+            self.move_forward()
+        if centroid[0] <= 240:
+            self.turn_right()
 
-    def __handle_intersection(self, instruction):
-        cent_x, cent_y, sides, area = self.eye.get_main_contour_params()
+    def __turn_left_at_intersection(self):
+        centroid, _, _, _, _ = self.eye.what_do_i_see()
+        while len(centroid) == 0 or centroid[0] > 150:
+            self.turn_left(hard=True)
+            centroid, _, _, _, _ = self.eye.what_do_i_see()
+        while centroid[0] > 325 or centroid[0] < 315:
+            self.turn_left(hard=True)
+            centroid, _, _, _, _ = self.eye.what_do_i_see()
+
+    def __turn_right_at_instruction(self):
+        centroid, _, _, _, _ = self.eye.what_do_i_see()
+        while len(centroid) == 0 or centroid[0] < 350:
+            self.turn_right(hard=True)
+            centroid, _, _, _, _ = self.eye.what_do_i_see()
+        while centroid[0] > 260 or centroid[0] < 240:
+            self.turn_right(hard=True)
+            centroid, _, _, _, _ = self.eye.what_do_i_see()
+
+    def handle_intersection(self, instruction):
+        centroid, area, sides, angle, is_obstacle = self.eye.what_do_i_see()
         while sides > 4:
             self.move_forward()
-        time.sleep(.5)
+        time.sleep(.2)
         self.stop_movement()
-    
-    def intersection_test(self):
-        self.stop_movement()
-        time.sleep(3)
-        while True:
-            cent_x, cent_y, sides, area = self.eye.get_main_contour_params()
-            utils.show("Number of sides currently visible: ", sides)
-            if sides > 8:
-                self.stop_movement() 
-                time.sleep(3)
-                while True:
-                    cx,_,s,_ = self.eye.get_main_contour_params()
-                    if s > 4:
-                        self.move_forward()
-                    else:
-                        self.__handle_left_turn
-                        break
-                return
-            else:
-                self.__follow_line(cent_x)
 
-            utils.show(chr(13))
-                
-                #self.__handle_intersection(Instruction.TURN_RIGHT)
+        if instruction == Instruction.STRAIGHT:
+            return
+        elif instruction == Instruction.RIGHT_TURN:
+            self.__turn_right_at_instruction()
+        elif instruction == Instruction.LEFT_TURN:
+            self.__turn_left_at_intersection()
+        elif instruction == Instruction.U_TURN:
+            self.__turn_left_at_intersection()
+            self.__turn_left_at_intersection()
+
 
 if __name__ == "__main__":
     robot = Robot()
-    #robot.test()
-    robot.intersection_test()
+    # robot.test()
+    robot.handle_intersection()

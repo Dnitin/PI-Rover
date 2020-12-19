@@ -87,28 +87,31 @@ class Robot:
                 self.stop_movement()
                 time.sleep(3)
                 print("intersection_seen")
-                instruction = Instruction.RIGHT_TURN #self.grid.get_next_instruction(False)
+                instruction = Instruction.LEFT_TURN #self.grid.get_next_instruction(False)
                 self.handle_intersection(instruction)
             else:
                 self.__follow_line(i_saw[0])
 
     def __follow_line(self, centroid):
         # error = int(320 - centroid[0])*self.kp
-        if centroid[0] < self.eye.:
+        if centroid[0] < self.eye.roi_width//2:
             self.turn_left()
-        if centroid[0] == 200:
+        if centroid[0] == self.eye.roi_width//2:
             self.move_forward()
-        if centroid[0] > 200:
+        if centroid[0] > self.eye.roi_width//2:
             self.turn_right()
 
     def __turn_left_at_intersection(self):
         i_saw = self.eye.what_do_i_see()
-        while len(is_saw) == 0 or i_saw[0][0] > 350:
+        while len(i_saw) == 0 or not self.__is_centroid_on_left_corner(i_saw[0]):
             self.turn_left(hard=True)
             i_saw = self.eye.what_do_i_see()
-        while i_saw[0][0] > 2 or i_saw[0][0] < 240:
+        while i_saw[0][0] < self.eye.roi_width//2:
             self.turn_left(hard=True)
             i_saw = self.eye.what_do_i_see()
+
+    def __is_centroid_on_left_corner(self, centroid):
+        return 0 < centroid[0] < 75
 
     def __turn_right_at_instruction(self):
         i_saw = self.eye.what_do_i_see()
@@ -121,7 +124,7 @@ class Robot:
 
     def handle_intersection(self, instruction):
         centroid, area, rect_dim, angle, is_obstacle = self.eye.what_do_i_see()
-        while rect_dim[0] > 300:
+        while rect_dim[0] > 150:
             self.move_forward()
             centroid, area, rect_dim, angle, is_obstacle = self.eye.what_do_i_see()
         time.sleep(.2)

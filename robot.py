@@ -12,7 +12,7 @@ from simple_pid import PID
 class Robot:
     def __init__(self):
         GPIO.setmode(GPIO.BOARD)
-        self.top_speed = 36
+        self.top_speed = 45
         self.left_wheel = Wheel(37, 40, 33, speed=self.top_speed)
         self.right_wheel = Wheel(38, 36, 32, speed=self.top_speed)
         self.eye = Vision()
@@ -20,7 +20,7 @@ class Robot:
         self.grid = Grid(4, 6)
         self.pid = PID(1, 0, 0, setpoint=self.eye.roi_width//2)
         self.pid.sample_time = 0.01
-        self.pid.output_limits = (36, 80)
+        self.pid.output_limits = (35, 45)
 
     def move_forward(self, speed):
         self.right_wheel.forward(speed)
@@ -105,10 +105,10 @@ class Robot:
     def __turn_left_at_intersection(self):
         i_saw = self.eye.what_do_i_see()
         while len(i_saw) == 0 or not self.__is_centroid_on_left_corner(i_saw[0]):
-            self.turn_left(hard=True, self.top_speed)
+            self.turn_left(self.top_speed, hard=True)
             i_saw = self.eye.what_do_i_see()
         while i_saw[0][0] < self.eye.roi_width//2:
-            self.turn_left(hard=True)
+            self.turn_left(self.top_speed, hard=True)
             i_saw = self.eye.what_do_i_see()
 
     def __is_centroid_on_left_corner(self, centroid):

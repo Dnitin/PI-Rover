@@ -86,7 +86,7 @@ class Vision:
     def process_frame(self, frame):
         path_params = self.__get_contour_params(frame, [(0, 0, 0), (50, 50, 50)])
         if len(path_params) > 3:
-            frame = cv2.putText(frame, "centroid: " + str(path_params[0]) + " sides: " + str(path_params[2]), (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0 ,255), 1)
+            frame = cv2.putText(frame, "centroid: " + str(path_params[0]) + " area: "+ str(path_params[1]) +" dimention: " + str(path_params[2]), (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0 ,255), 1)
             path_params.append(self.__is_obstacle_visible(frame))
         cv2.imshow("ROI - VISIBLE - CONTOURS-1", frame)
         return path_params
@@ -100,17 +100,17 @@ class Vision:
         image = self.get_roi(frame)
         path = self.__convert_to_binary_image(image, threshold_range)
         path = self.__filter_image(path)
-        cv2.imshow("bw_img", path)
+        # cv2.imshow("bw_img", path)
         contours, hierarchy = cv2.findContours(path.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         params = []
         if len(contours) > 0:
             main_contour = max(contours, key=cv2.contourArea)
             min_area_rect = cv2.minAreaRect(main_contour)
-            angle = 0 #self.__find_angle_of_min_area_rectangle(min_area_rect)
+            angle = int(min_area_rect[2])
             rectangle_center = int(min_area_rect[0][0]), int(min_area_rect[0][1])
             rectangle_dimentions = int(min_area_rect[1][0]), int(min_area_rect[1][1])
-            params = [rectangle_center, angle, rectangle_dimentions, angle]
-            #self.__draw_min_area_rect_box(image, min_area_rect)
+            params = [rectangle_center, cv2.contourArea(main_contour), rectangle_dimentions, angle]
+            self.__draw_min_area_rect_box(image, min_area_rect)
         
         # cv2.drawContours(image, contours, -1, (0, 255, 0), 3)
         return params

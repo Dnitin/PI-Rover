@@ -7,7 +7,7 @@ class Wheel:
         self.pin_b = pin_b
         self.enable = pin_en
         self.init_pins()
-        self.pwm = GPIO.PWM(self.enable, 500)
+        self.pwm = GPIO.PWM(self.enable, 100)
         self.stop()
         self.pwm.start(speed)
 
@@ -16,11 +16,13 @@ class Wheel:
         GPIO.setup(self.pin_b, GPIO.OUT)
         GPIO.setup(self.enable, GPIO.OUT)
 
-    def forward(self, speed=50):
+    def forward(self, speed):
+        self.pwm.ChangeDutyCycle(speed)
         GPIO.output(self.pin_a, GPIO.LOW)
         GPIO.output(self.pin_b, GPIO.HIGH)
 
-    def back(self, speed=50):
+    def back(self, speed):
+        self.pwm.ChangeDutyCycle(speed)
         GPIO.output(self.pin_a, GPIO.HIGH)
         GPIO.output(self.pin_b, GPIO.LOW)
 

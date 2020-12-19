@@ -8,11 +8,10 @@ from grid import Grid, Instruction
 from wheel import Wheel
 from vision import Vision
 
-
 class Robot:
     def __init__(self):
         GPIO.setmode(GPIO.BOARD)
-        self.top_speed = 35
+        self.top_speed = 40
         self.left_wheel = Wheel(37, 40, 33, speed=self.top_speed)
         self.right_wheel = Wheel(38, 36, 32, speed=self.top_speed)
         self.eye = Vision()
@@ -81,49 +80,53 @@ class Robot:
         time.sleep(2)
         instruction = Instruction.STRAIGHT
         while instruction != Instruction.STOP:
-            centroid, area, sides, angle, is_obstacle = self.eye.what_do_i_see()
-            if sides > 4:
+            i_saw = self.eye.what_do_i_see()
+            if len(i_saw) == 0:
+                continue
+            if i_saw[2][0] > 300:
                 self.stop_movement()
-                time.sleep(5)
+                time.sleep(3)
+                print("intersection_seen")
                 instruction = Instruction.RIGHT_TURN #self.grid.get_next_instruction(False)
                 self.handle_intersection(instruction)
             else:
-                self.__follow_line(centroid, angle)
+                self.__follow_line(i_saw[0])
 
-    def __follow_line(self, centroid, angle):
+    def __follow_line(self, centroid):
         # error = int(320 - centroid[0])*self.kp
-        if centroid[0] >= 250:
+        if centroid[0] < self.eye.:
             self.turn_left()
-        if 250 > centroid[0] > 240:
+        if centroid[0] == 200:
             self.move_forward()
-        if centroid[0] <= 240:
+        if centroid[0] > 200:
             self.turn_right()
 
     def __turn_left_at_intersection(self):
-        centroid, _, _, _, _ = self.eye.what_do_i_see()
-        while len(centroid) == 0 or centroid[0] > 150:
+        i_saw = self.eye.what_do_i_see()
+        while len(is_saw) == 0 or i_saw[0][0] > 350:
             self.turn_left(hard=True)
-            centroid, _, _, _, _ = self.eye.what_do_i_see()
-        while centroid[0] > 260 or centroid[0] < 240:
+            i_saw = self.eye.what_do_i_see()
+        while i_saw[0][0] > 2 or i_saw[0][0] < 240:
             self.turn_left(hard=True)
-            centroid, _, _, _, _ = self.eye.what_do_i_see()
+            i_saw = self.eye.what_do_i_see()
 
     def __turn_right_at_instruction(self):
-        centroid, _, _, _, _ = self.eye.what_do_i_see()
-        while len(centroid) == 0 or centroid[0] < 350:
+        i_saw = self.eye.what_do_i_see()
+        while len(i_saw) == 0 or i_saw[0][0] < 350:
             self.turn_right(hard=True)
-            centroid, _, _, _, _ = self.eye.what_do_i_see()
-        while centroid[0] > 260 or centroid[0] < 240:
+            i_saw = self.eye.what_do_i_see()
+        while i_saw[0][0] > 260 or i_saw[0][0] < 240:
             self.turn_right(hard=True)
-            centroid, _, _, _, _ = self.eye.what_do_i_see()
+            i_saw = self.eye.what_do_i_see()
 
     def handle_intersection(self, instruction):
-        centroid, area, sides, angle, is_obstacle = self.eye.what_do_i_see()
-        while sides > 4:
+        centroid, area, rect_dim, angle, is_obstacle = self.eye.what_do_i_see()
+        while rect_dim[0] > 300:
             self.move_forward()
-            centroid, area, sides, angle, is_obstacle = self.eye.what_do_i_see()
+            centroid, area, rect_dim, angle, is_obstacle = self.eye.what_do_i_see()
         time.sleep(.2)
         self.stop_movement()
+        print("milestone")
 
         if instruction == Instruction.STRAIGHT:
             return

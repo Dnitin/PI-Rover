@@ -5,7 +5,7 @@ import utils
 
 
 class Vision:
-    def __init__(self, capture_channel=0, frame_width=640, frame_height=480):
+    def __init__(self, capture_channel=0, frame_width=300, frame_height=200):
         self.frame_width = frame_width
         self.frame_height = frame_height
         self.web_cam = cv2.VideoCapture(capture_channel)
@@ -17,8 +17,8 @@ class Vision:
 
         self.roi_height_offset = 0
 
-        self.roi_width = 500
-        self.roi_height = 300
+        self.roi_width = 300
+        self.roi_height = 200
         time.sleep(0.5)
 
     def get_current_frame(self):
@@ -51,8 +51,8 @@ class Vision:
     @staticmethod
     def __filter_image(image):
         kernel = np.ones((3, 3), np.uint8)
-        image = cv2.erode(image, kernel, iterations=5)
-        image = cv2.dilate(image, kernel, iterations=7)
+        image = cv2.erode(image, kernel, iterations=3)
+        # image = cv2.dilate(image, kernel, iterations=7)
         return image
 
     @staticmethod
@@ -86,10 +86,10 @@ class Vision:
     def process_frame(self, frame):
         path_params = self.__get_contour_params(frame, [(0, 0, 0), (50, 50, 50)])
         if len(path_params) > 3:
-            frame = cv2.putText(frame, "centroid: " + str(path_params[0]) + " sides: " + str(path_params[2]), (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0 ,255), 0.6)
-        cv2.imshow("ROI - VISIBLE - CONTOURS-1", frame)
+            frame = cv2.putText(frame, "centroid: " + str(path_params[0]) + " sides: " + str(path_params[2]), (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0 ,255), 1)
             path_params.append(self.__is_obstacle_visible(frame))
-            return path_params
+        cv2.imshow("ROI - VISIBLE - CONTOURS-1", frame)
+        return path_params
 
     def what_do_i_see(self):
         i_saw = self.process_frame(self.get_current_frame())
@@ -106,11 +106,11 @@ class Vision:
         if len(contours) > 0:
             main_contour = max(contours, key=cv2.contourArea)
             min_area_rect = cv2.minAreaRect(main_contour)
-            angle = self.__find_angle_of_min_area_rectangle(min_area_rect)
-            centroid = int(min_area_rect[0][0]), int(min_area_rect[0][1])
+            angle = 0 #self.__find_angle_of_min_area_rectangle(min_area_rect)
+            rectangle_center = int(min_area_rect[0][0]), int(min_area_rect[0][1])
             rectangle_dimentions = int(min_area_rect[1][0]), int(min_area_rect[1][1])
-            params = [centroid, cv2.contourArea(main_contour), rectangle_dimentions, angle]
-            self.__draw_min_area_rect_box(image, min_area_rect)
+            params = [rectangle_center, angle, rectangle_dimentions, angle]
+            #self.__draw_min_area_rect_box(image, min_area_rect)
         
         # cv2.drawContours(image, contours, -1, (0, 255, 0), 3)
         return params
@@ -144,13 +144,13 @@ class Vision:
         while True:
             frame += 1
             self.what_do_i_see()
+            utils.show("frame Rate: ", frame/(time.time()-v))
             # cx, cy, s, area = self.get_main_contour_params()
             # utils.show("cx :" + str(cx) + " cy: " + str(cy) + " sides : " + str(s))
             # utils.show(chr(13))
             # if cv2.waitKey(1) & 0xFF == ord('q'):
             #    break
 
-        utils.show("frame Rate: ", frame/(time.time()-v))
         self.web_cam.release()
         cv2.destroyAllWindows()
 

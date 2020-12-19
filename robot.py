@@ -12,7 +12,7 @@ from vision import Vision
 class Robot:
     def __init__(self):
         GPIO.setmode(GPIO.BOARD)
-        self.top_speed = 95
+        self.top_speed = 35
         self.left_wheel = Wheel(37, 40, 33, speed=self.top_speed)
         self.right_wheel = Wheel(38, 36, 32, speed=self.top_speed)
         self.eye = Vision()
@@ -78,12 +78,14 @@ class Robot:
         self.joy.close()
 
     def explore_grid(self):
+        time.sleep(2)
         instruction = Instruction.STRAIGHT
         while instruction != Instruction.STOP:
             centroid, area, sides, angle, is_obstacle = self.eye.what_do_i_see()
             if sides > 4:
-                time.sleep(1)
-                instruction = self.grid.get_next_instruction(False)
+                self.stop_movement()
+                time.sleep(5)
+                instruction = Instruction.RIGHT_TURN #self.grid.get_next_instruction(False)
                 self.handle_intersection(instruction)
             else:
                 self.__follow_line(centroid, angle)
@@ -102,7 +104,7 @@ class Robot:
         while len(centroid) == 0 or centroid[0] > 150:
             self.turn_left(hard=True)
             centroid, _, _, _, _ = self.eye.what_do_i_see()
-        while centroid[0] > 325 or centroid[0] < 315:
+        while centroid[0] > 260 or centroid[0] < 240:
             self.turn_left(hard=True)
             centroid, _, _, _, _ = self.eye.what_do_i_see()
 
@@ -119,6 +121,7 @@ class Robot:
         centroid, area, sides, angle, is_obstacle = self.eye.what_do_i_see()
         while sides > 4:
             self.move_forward()
+            centroid, area, sides, angle, is_obstacle = self.eye.what_do_i_see()
         time.sleep(.2)
         self.stop_movement()
 
@@ -135,5 +138,5 @@ class Robot:
 
 if __name__ == "__main__":
     robot = Robot()
-    # robot.test()
-    robot.handle_intersection()
+    robot.test()
+    robot.explore_grid()

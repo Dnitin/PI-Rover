@@ -83,7 +83,7 @@ class Robot:
             i_saw = self.eye.what_do_i_see()
             if len(i_saw) == 0:
                 continue
-            if i_saw[1] > 1000:
+            if i_saw[2] > 10000:
                 self.stop_movement()
                 time.sleep(3)
                 print("intersection_seen")
@@ -126,13 +126,13 @@ class Robot:
 
     def handle_intersection(self, instruction):
         i_saw = self.eye.what_do_i_see()
-        while i_saw[1] > 8000:
+        while i_saw[2] > 10000:
             self.move_forward(self.top_speed)
             i_saw = self.eye.what_do_i_see()
         self.stop_movement()
         print("milestone")
         time.sleep(5)
-        return 
+        return
 
         if instruction == Instruction.STRAIGHT:
             return

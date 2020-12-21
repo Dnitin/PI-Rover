@@ -75,6 +75,13 @@ class Vision:
         cv2.drawContours(image, [box], 0, (0, 0, 255), 2)
         cv2.circle(image, (int(min_area_rect[0][0]), int(min_area_rect[0][1])), 5, (0, 255, 255), 2)
 
+    @staticmethod
+    def __put_text_on_frame(self, frame, *args):
+        string = ""
+        for arg in args:
+            string += ("  " + str(arg))
+        return cv2.putText(frame, string, (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 255), 1)
+
     def __is_obstacle_visible(self, frame):
         # hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         return False
@@ -86,7 +93,8 @@ class Vision:
     def process_frame(self, frame):
         path_params = self.__get_contour_params(frame, [(0, 0, 0), (50, 50, 50)])
         if len(path_params) > 3:
-            frame = cv2.putText(frame, "centroid: " + str(path_params[0]) + " area: "+ str(path_params[1]) +" dimention: " + str(path_params[2]), (20,20), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0 ,255), 1)
+            frame = self.__put_text_on_frame(frame, "centroid: ", path_params[0], " dimension: ", path_params[1],
+                                             " contour_area: ", path_params[2])
             path_params.append(self.__is_obstacle_visible(frame))
         cv2.imshow("ROI - VISIBLE - CONTOURS-1", frame)
         return path_params
@@ -106,12 +114,11 @@ class Vision:
         if len(contours) > 0:
             main_contour = max(contours, key=cv2.contourArea)
             min_area_rect = cv2.minAreaRect(main_contour)
-            angle = int(min_area_rect[2])
             rectangle_center = int(min_area_rect[0][0]), int(min_area_rect[0][1])
-            rectangle_dimentions = int(min_area_rect[1][0]), int(min_area_rect[1][1])
-            params = [rectangle_center, cv2.contourArea(main_contour), rectangle_dimentions, angle]
+            rectangle_dimension = int(min_area_rect[1][0]), int(min_area_rect[1][1])
+            params = [rectangle_center, rectangle_dimension, cv2.contourArea(main_contour)]
             self.__draw_min_area_rect_box(image, min_area_rect)
-        
+
         # cv2.drawContours(image, contours, -1, (0, 255, 0), 3)
         return params
 
@@ -129,7 +136,6 @@ class Vision:
             print("HSV Format ", hsv[y, x])
             print("Coordinates of pixel: X: ", x, "Y: ", y)
 
-
     def __check_breaking_condition(self):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             self.web_cam.release()
@@ -144,7 +150,7 @@ class Vision:
         while True:
             frame += 1
             self.what_do_i_see()
-            utils.show("frame Rate: ", frame/(time.time()-v))
+            utils.show("frame Rate: ", frame / (time.time() - v))
             # cx, cy, s, area = self.get_main_contour_params()
             # utils.show("cx :" + str(cx) + " cy: " + str(cy) + " sides : " + str(s))
             # utils.show(chr(13))

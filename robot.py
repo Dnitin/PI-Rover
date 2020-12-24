@@ -12,9 +12,9 @@ from simple_pid import PID
 class Robot:
     def __init__(self):
         GPIO.setmode(GPIO.BOARD)
-        self.top_speed = 38
-        self.left_wheel = Wheel(37, 40, 33, speed=self.top_speed)
-        self.right_wheel = Wheel(38, 36, 32, speed=self.top_speed)
+        self.top_speed = 18
+        self.left_wheel = Wheel(40, 37, 33, frequency=100)
+        self.right_wheel = Wheel(36, 38, 32, frequency=100)
         self.eye = Vision()
         self.joy = xbox.Joystick()
         self.grid = Grid(4, 6)
@@ -30,19 +30,19 @@ class Robot:
         self.right_wheel.back(speed)
         self.left_wheel.back(speed)
 
-    def turn_right(self, speed, hard=False):
-        self.right_wheel.forward(self.top_speed)
-        if hard:
-            self.left_wheel.back(speed)
-        else:
-            self.left_wheel.stop()
-
     def turn_left(self, speed, hard=False):
+        self.left_wheel.forward(speed)
         if hard:
             self.right_wheel.back(speed)
         else:
             self.right_wheel.stop()
-        self.left_wheel.forward(self.top_speed)
+
+    def turn_right(self, speed, hard=False):
+        if hard:
+            self.left_wheel.back(speed)
+        else:
+            self.left_wheel.stop()
+        self.right_wheel.forward(speed)
 
     def stop_movement(self):
         self.right_wheel.stop()
@@ -50,6 +50,7 @@ class Robot:
 
     def test(self):
         while not self.joy.Back():
+            self.eye.what_do_i_see()
             # Show connection status
             utils.show("Connected:")
             utils.show_if(self.joy.connected(), "Y", "N")
@@ -80,14 +81,16 @@ class Robot:
         time.sleep(2)
         instruction = Instruction.STRAIGHT
         while instruction != Instruction.STOP:
+            print("explore_grid"+str(instruction))
             i_saw = self.eye.what_do_i_see()
             if len(i_saw) == 0:
                 continue
-            if i_saw[2] > 10000:
+            if i_saw[2] > 10000 and i_saw[1][0]* i_saw[1][1] > 30000: 
                 self.stop_movement()
                 time.sleep(3)
-                print("intersection_seen")
-                instruction = Instruction.LEFT_TURN #self.grid.get_next_instruction(False)
+                instructions = self.grid.get_next_instruction(False)
+                instruction = instructions[0]
+                print("intersection_seen"+str(instruction))
                 self.handle_intersection(instruction)
             else:
                 self.__follow_line(i_saw[0])
@@ -95,7 +98,7 @@ class Robot:
     def __follow_line(self, centroid):
         # error = int(320 - centroid[0])*self.kp
         speed = self.top_speed #self.pid(centroid[0])
-        error_range = 15
+        error_range = 13
         if centroid[0] < self.eye.roi_width//2 - error_range:
             self.turn_left(speed, hard=True)
         if self.eye.roi_width//2 - error_range <= centroid[0] <= self.eye.roi_width//2 + error_range:
@@ -103,47 +106,19 @@ class Robot:
         if centroid[0] > self.eye.roi_width//2 + error_range:
             self.turn_right(speed, hard=True)
 
-    def __turn_left_at_intersection(self):
-        i_saw = self.eye.what_do_i_see()
-        while len(i_saw) == 0 or not self.__is_centroid_on_left_corner(i_saw[0]):
-            self.turn_left(self.top_speed, hard=True)
-            i_saw = self.eye.what_do_i_see()
-        while i_saw[0][0] < self.eye.roi_width//2:
-            self.turn_left(self.top_speed, hard=True)
-            i_saw = self.eye.what_do_i_see()
-
-    def __is_centroid_on_left_corner(self, centroid):
-        return 0 < centroid[0] < 75
-
-    def __turn_right_at_instruction(self):
-        i_saw = self.eye.what_do_i_see()
-        while len(i_saw) == 0 or i_saw[0][0] < 350:
-            self.turn_right(hard=True)
-            i_saw = self.eye.what_do_i_see()
-        while i_saw[0][0] > 260 or i_saw[0][0] < 240:
-            self.turn_right(hard=True)
-            i_saw = self.eye.what_do_i_see()
-
     def handle_intersection(self, instruction):
         i_saw = self.eye.what_do_i_see()
-        while i_saw[2] > 10000:
-            self.move_forward(self.top_speed)
+        while i_saw[2] > 10000 and i_saw[1][0] * i_saw[1][1] > 30000: 
+            if instruction.name == Instruction.STRAIGHT.name:
+                self.__follow_line(i_saw[0])
+            elif instruction.name == Instruction.RIGHT_TURN.name:
+                self.turn_right(self.top_speed+10)
+            elif instruction.name == Instruction.LEFT_TURN.name:
+                self.turn_left(self.top_speed+10)
+            elif instruction.name == Instruction.U_TURN.name:
+                print("cant do that right now")
             i_saw = self.eye.what_do_i_see()
-        self.stop_movement()
         print("milestone")
-        time.sleep(5)
-        return
-
-        if instruction == Instruction.STRAIGHT:
-            return
-        elif instruction == Instruction.RIGHT_TURN:
-            self.__turn_right_at_instruction()
-        elif instruction == Instruction.LEFT_TURN:
-            self.__turn_left_at_intersection()
-        elif instruction == Instruction.U_TURN:
-            self.__turn_left_at_intersection()
-            self.__turn_left_at_intersection()
-
 
 if __name__ == "__main__":
     robot = Robot()

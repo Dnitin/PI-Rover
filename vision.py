@@ -76,11 +76,12 @@ class Vision:
         cv2.circle(image, (int(min_area_rect[0][0]), int(min_area_rect[0][1])), 5, (0, 255, 255), 2)
 
     @staticmethod
-    def __put_text_on_frame(self, frame, *args):
+    def __construct_text(self, *args):
         string = ""
         for arg in args:
-            string += ("  " + str(arg))
-        return cv2.putText(frame, string, (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255, 0, 255), 1)
+            string += (str(arg) + " ")
+        # print(string)
+        return string 
 
     def __is_obstacle_visible(self, frame):
         # hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -91,12 +92,12 @@ class Vision:
         return False
 
     def process_frame(self, frame):
-        path_params = self.__get_contour_params(frame, [(0, 0, 0), (50, 50, 50)])
-        if len(path_params) > 3:
-            frame = self.__put_text_on_frame(frame, "centroid: ", path_params[0], " dimension: ", path_params[1],
-                                             " contour_area: ", path_params[2])
+        path_params = self.__get_contour_params(frame, [(0, 0, 0), (55, 55, 55)])
+        if len(path_params) > 0: 
+            string = self.__construct_text("", path_params[0], path_params[1][0]*path_params[1][1], path_params[2])
+            frame = cv2.putText(frame, string, (20, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 255), 1)
             path_params.append(self.__is_obstacle_visible(frame))
-        cv2.imshow("ROI - VISIBLE - CONTOURS-1", frame)
+        cv2.imshow("ROI - VISIBLE - CONTOURS", frame)
         return path_params
 
     def what_do_i_see(self):
@@ -108,7 +109,7 @@ class Vision:
         image = self.get_roi(frame)
         path = self.__convert_to_binary_image(image, threshold_range)
         path = self.__filter_image(path)
-        # cv2.imshow("bw_img", path)
+        cv2.imshow("bw_img", path)
         contours, hierarchy = cv2.findContours(path.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         params = []
         if len(contours) > 0:
@@ -145,18 +146,18 @@ class Vision:
     def start_seeing(self):
         frame = 0
         v = time.time()
-        cv2.namedWindow('ROI - VISIBLE - CONTOURS-1')
-        cv2.setMouseCallback('ROI - VISIBLE - CONTOURS-1', self.mouse_rgb)
+        cv2.namedWindow('ROI - VISIBLE - CONTOURS')
+        cv2.setMouseCallback('ROI - VISIBLE - CONTOURS', self.mouse_rgb)
         while True:
             frame += 1
             self.what_do_i_see()
-            utils.show("frame Rate: ", frame / (time.time() - v))
             # cx, cy, s, area = self.get_main_contour_params()
             # utils.show("cx :" + str(cx) + " cy: " + str(cy) + " sides : " + str(s))
             # utils.show(chr(13))
             # if cv2.waitKey(1) & 0xFF == ord('q'):
             #    break
 
+        utils.show("frame Rate: ", frame / (time.time() - v))
         self.web_cam.release()
         cv2.destroyAllWindows()
 

@@ -9,6 +9,11 @@ class Instruction(Enum):
     U_TURN = "u_turn"
     STOP = "stop"
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.value == other.value
+        return False
+
 
 class Direction(Enum):
     NORTH = "negative_x"

@@ -11,7 +11,7 @@ class Instruction(Enum):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return :wq!self.value == other.value
+            return self.value == other.value
         return False
 
 

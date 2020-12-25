@@ -51,16 +51,15 @@ class Vision:
     @staticmethod
     def __filter_image(image):
         kernel = np.ones((3, 3), np.uint8)
-        image = cv2.erode(image, kernel, iterations=4)
+        image = cv2.erode(image, kernel, iterations=3)
         # image = cv2.dilate(image, kernel, iterations=7)
         return image
 
     @staticmethod
     def __convert_to_binary_image(image, threshold_range):
-        # return cv2.inRange(image, threshold_range[0], threshold_range[1])
+        #return cv2.inRange(image, threshold_range[0], threshold_range[1])
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        ret, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY_INV)
-        return thresh
+        return cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
 
     @staticmethod
     def __get_contour_centroid(contour):

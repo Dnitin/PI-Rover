@@ -18,9 +18,9 @@ class Robot:
         self.eye = Vision()
         self.joy = xbox.Joystick()
         self.grid = Grid(4, 6)
-        self.pid = PID(0.5, 0.01, 0, setpoint=self.eye.roi_width//2)
+        self.pid = PID(0.9, 0, 0, setpoint=self.eye.roi_width//2)
         self.pid.sample_time = 0.01
-        self.pid.output_limits = (35, 45)
+        self.pid.output_limits = (15, 30)
 
     def move_forward(self, speed):
         self.right_wheel.forward(speed)
@@ -94,11 +94,29 @@ class Robot:
                 self.handle_intersection(instruction)
             else:
                 self.__follow_line(i_saw[0])
+    
+    def simple_line_follower(self):
+        time.sleep(2)
+        while True:
+            i_saw = self.eye.what_do_i_see()
+            self.__follow_line(i_saw[0])
 
     def __follow_line(self, centroid):
-        # error = int(320 - centroid[0])*self.kp
+        error = self.eye.roi_width//2 - centroid[0]
+        op = self.pid(error)
+        print("error : " + str(error) + " speed : " + str(op))
+        if error < 0:
+            self.turn_left(op, hard=True)
+        elif error > 0:
+            self.turn_right(op, hard=True)
+        else:
+            self.move_forward(op)
+
+        return
+
+
         speed = self.top_speed #self.pid(centroid[0])
-        error_range = 13
+        error_range = 20
         if centroid[0] < self.eye.roi_width//2 - error_range:
             self.turn_left(speed, hard=True)
         if self.eye.roi_width//2 - error_range <= centroid[0] <= self.eye.roi_width//2 + error_range:
@@ -123,4 +141,5 @@ class Robot:
 if __name__ == "__main__":
     robot = Robot()
     robot.test()
-    robot.explore_grid()
+    robot.simple_line_follower()
+    #robot.explore_grid()

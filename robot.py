@@ -7,21 +7,21 @@ import utils
 from grid import Grid, Instruction
 from wheel import Wheel
 from vision import Vision
-from simple_pid import PID
+import sys
 
 class Robot:
     def __init__(self):
         GPIO.setmode(GPIO.BOARD)
-        self.top_speed = 35
-        self.base_speed = 25
+        self.top_speed = 30
+        self.base_speed = 15
         self.left_wheel = Wheel(40, 37, 33, frequency=100)
         self.right_wheel = Wheel(36, 38, 32, frequency=100)
         self.eye = Vision()
         self.joy = xbox.Joystick()
         self.grid = Grid(4, 6)
         # PID PARAM (MIGHT MOVE)
-        self.kp = 1
-        self.kd = 0
+        self.kp = 0.15
+        self.kd = 1
         self.ki = 0
         self.error = 0
         self.integral = 0
@@ -107,14 +107,15 @@ class Robot:
         time.sleep(2)
         while True:
             i_saw = self.eye.what_do_i_see()
-            self.__follow_line(i_saw[0])
+            if len(i_saw) > 0:
+                self.__follow_line(i_saw[0])
 
     def __follow_line(self, centroid):
         error = self.eye.roi_width//2 - centroid[0]
         prop = error
         self.integral += error
-        derivative = error - self.last_error
-        self.last_error = error
+        derivative = error - self.error
+        self.error = error
 
         correction = prop*self.kp + self.integral*self.ki + derivative*self.kd
 
@@ -129,18 +130,9 @@ class Robot:
             speed_left = self.top_speed
         if speed_right > self.top_speed:
             speed_right = self.top_speed
-
+        
+        print("error:"+str(error)+" correction:"+str(correction)+" s_l:"+str(speed_left)+" s_r:"+str(speed_right))
         self.move_robot(speed_left, speed_right)
-
-        return
-
-        error_range = 20
-        if centroid[0] < self.eye.roi_width//2 - error_range:
-            self.turn_left(self.top_speed, hard=True)
-        if self.eye.roi_width//2 - error_range <= centroid[0] <= self.eye.roi_width//2 + error_range:
-            self.move_forward(self.top_speed)
-        if centroid[0] > self.eye.roi_width//2 + error_range:
-            self.turn_right(self.top_speed, hard=True)
 
     def handle_intersection(self, instruction):
         i_saw = self.eye.what_do_i_see()
@@ -148,16 +140,21 @@ class Robot:
             if instruction.name == Instruction.STRAIGHT.name:
                 self.__follow_line(i_saw[0])
             elif instruction.name == Instruction.RIGHT_TURN.name:
-                self.turn_right(self.top_speed+10)
+                self.turn_right(self.top_speed+30)
             elif instruction.name == Instruction.LEFT_TURN.name:
-                self.turn_left(self.top_speed+10)
+                self.turn_left(self.top_speed+30)
             elif instruction.name == Instruction.U_TURN.name:
                 print("cant do that right now")
             i_saw = self.eye.what_do_i_see()
         print("milestone")
 
 if __name__ == "__main__":
+
     robot = Robot()
-    robot.test()
-    robot.simple_line_follower()
-    #robot.explore_grid()
+    for arg in sys.argv:
+        if arg == 'explore_grid':
+            robot.test()
+        elif arg == 'line_follower':
+            robot.simple_line_follower()
+        else:
+            robot.test()

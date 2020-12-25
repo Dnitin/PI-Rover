@@ -8,15 +8,23 @@ if (($# == 0)); then
 	exit 2
 fi
 
-while getopts "vr?h" opt; do
+while getopts "vtle?h" opt; do
   case $opt in
 	  v)
 		  echo "Calling vision script..."
 		  sudo /home/pi/.virtualenvs/cv_bot/bin/python vision.py
 		  ;;
-	  r)
-		  echo "Starting Robot..."
-		  sudo /home/pi/.virtualenvs/cv_bot/bin/python robot.py
+	  t)
+		  echo "Starting Robot in test mode..."
+		  sudo /home/pi/.virtualenvs/cv_bot/bin/python robot.py tst
+		  ;;
+	  l)
+		  echo "Starting Robot in line follower mode..."
+		  sudo /home/pi/.virtualenvs/cv_bot/bin/python robot.py line_follower
+		  ;;
+	  e)
+		  echo "Starting Robot in Grid explorer mode..."
+		  sudo /home/pi/.virtualenvs/cv_bot/bin/python robot.py explore_grid
 		  ;;
 	  h|?)
 		  usage

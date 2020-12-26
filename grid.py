@@ -7,6 +7,7 @@ class Instruction(Enum):
     LEFT_TURN = "left"
     RIGHT_TURN = "right"
     U_TURN = "u_turn"
+    BACK = "back"
     STOP = "stop"
 
     def __eq__(self, other):
@@ -194,14 +195,24 @@ class Grid:
                 self.c_dir = Direction.EAST
                 return [Instruction.U_TURN]
 
+    def __back_movement(self):    
+        if self.c_dir == Direction.SOUTH:
+            self.c_x -= 1
+        elif self.c_dir == Direction.NORTH:
+            self.c_x += 1
+        elif self.c_dir == Direction.EAST:
+            self.c_y -= 1
+        else:
+            self.c_y += 1
+    
     def get_next_instruction(self, is_obstacle):
         self.__mark_node(is_obstacle)
 
         if is_obstacle:
             self.stack.pop()
             self.stack.pop()
-            self.__turn180()
-            return [Instruction.U_TURN]
+            self.__back_movement()
+            return [Instruction.BACK]
 
         if self.__go_straight():
             return [Instruction.STRAIGHT]
@@ -221,12 +232,27 @@ class Grid:
         return self.get_navigating_instruction_a_2_b(x, y, to_go_x, to_go_y)
 
 
-if __name__ == "__main__":
-    grid = Grid(5, 5)
-    grid.grid = np.full((5, 5, 3), False)
+def print_grid(grid, x, y):
+    for i in range(0,4):
+        for j in range(0,6):
+            print(str(grid[i][j][1])+"    ", end="")
+            if i==x and j==y:
+                print(0, end="")
+            else:
+                print(" ", end="")
+        print()
+        print()
 
+if __name__ == "__main__":
+    grid = Grid(4, 6)
+    grid.grid = np.full((4, 6, 3), False)
+    grid.grid[3][5][0] = True
+
+    #print_grid(grid.grid)
     while True:
-        ins = grid.get_next_instruction(False)
+        obs = grid.grid[grid.c_x][grid.c_y][0]
+        print_grid(grid.grid, grid.c_x, grid.c_y)
+        ins = grid.get_next_instruction(obs)
         print(ins)
         if Instruction.STOP == ins:
             break

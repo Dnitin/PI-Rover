@@ -6,6 +6,7 @@ import RPi.GPIO as GPIO
 import utils
 from grid import Grid, Instruction
 from wheel import Wheel
+from ping import Ping
 from vision import Vision
 import sys
 
@@ -17,8 +18,9 @@ class Robot:
         self.base_speed = 15
         self.left_wheel = Wheel(37, 40, 33, frequency=100)
         self.right_wheel = Wheel(36, 38, 32, frequency=100)
+        self.ping = Ping(5, 3)
         self.eye = Vision()
-        self.joy = xbox.Joystick()
+        self.joy = None
         self.grid = Grid(4, 6)
         # PID PARAM (MIGHT MOVE)
         self.kp = 0.15
@@ -26,6 +28,9 @@ class Robot:
         self.ki = 0
         self.error = 0
         self.integral = 0
+
+    def init_xbox(self):
+        return xbox.Joystick()
 
     def move_robot(self, left_motor_speed, right_motor_speed):
         self.left_wheel.forward(left_motor_speed)
@@ -58,13 +63,16 @@ class Robot:
         self.left_wheel.stop()
 
     def test(self):
+        self.joy = self.init_xbox()
         while not self.joy.Back():
             self.eye.what_do_i_see()
+            dis = self.ping.distance()
+            utils.show(dis)
             # Show connection status
             utils.show("Connected:")
             utils.show_if(self.joy.connected(), "Y", "N")
 
-            if self.joy.dpadUp():
+            if self.joy.dpadUp() and dis > 15:
                 utils.show("UP")
                 self.move_forward(self.top_speed)
 
@@ -87,7 +95,7 @@ class Robot:
         self.joy.close()
 
     def is_intersection_visible(self, i_saw):
-        return i_saw[1][0] * i_saw[1][1] > 30000
+        return i_saw[1][0] * i_saw[1][1] > 15000
 
     def explore_grid(self):
         time.sleep(2)
@@ -97,8 +105,12 @@ class Robot:
             i_saw = self.eye.what_do_i_see()
             if len(i_saw) == 0:
                 continue
+            distance = self.ping.distance()
+            is_intersection = False
+            is_obstacle = False
             if self.is_intersection_visible(i_saw):
                 self.stop_movement()
+                time.sleep(2)
                 is_intersection = True
                 count = 1
                 while count > 0:
@@ -106,15 +118,30 @@ class Robot:
                     time.sleep(0.1)
                     i_saw = self.eye.what_do_i_see()
                     is_intersection = is_intersection and self.is_intersection_visible(i_saw)
-                if is_intersection:
-                    instructions = self.grid.get_next_instruction(False)
-                    instruction = instructions[0]
-                    print("intersection_seen"+str(instruction))
-                    self.handle_intersection(instruction)
-                else:
-                    print("False Intersection")
+                    count -= 1
+
+            if distance <= 10:
+                self.stop_movement()
+                time.sleep(2)
+                is_obstacle = True
+                count = 2
+                while count > 0:
+                    distance = self.ping.distance()
+                    is_obstacle = is_obstacle and (distance <= 10)
+                    count -= 1
+
+            if is_intersection or is_obstacle:
+                self.stop_movement()
+                time.sleep(1)
+                print("exiting: "+str(distance))
+                # exit()
+                instructions = self.grid.get_next_instruction(is_obstacle)
+                instruction = instructions[0]
+                print("intersection_seen"+str(instruction)+str(distance))
+                self.handle_intersection(instruction)
             else:
                 self.__follow_line(i_saw[0])
+
 
     def simple_line_follower(self):
         time.sleep(2)
@@ -144,21 +171,39 @@ class Robot:
         if speed_right > self.top_speed:
             speed_right = self.top_speed
         
-        print("error:"+str(error)+" correction:"+str(correction)+" s_l:"+str(speed_left)+" s_r:"+str(speed_right))
+        #print("error:"+str(error)+" correction:"+str(correction)+" s_l:"+str(speed_left)+" s_r:"+str(speed_right))
         self.move_robot(speed_left, speed_right)
 
+    def handle_back_gear(self):
+        i_saw = self.eye.what_do_i_see()
+        while not self.is_intersection_visible(i_saw):
+            self.move_back(self.base_speed)
+            i_saw = self.eye.what_do_i_see()
+        self.stop_movement()
+        print("exitttttttttttt")
+
     def handle_intersection(self, instruction):
+        if instruction.name == Instruction.BACK.name:
+            self.handle_back_gear()
+            return
+
         i_saw = self.eye.what_do_i_see()
         while self.is_intersection_visible(i_saw):
             if instruction.name == Instruction.STRAIGHT.name:
                 self.move_forward(self.base_speed)
             elif instruction.name == Instruction.RIGHT_TURN.name:
-                self.turn_right(self.base_speed)
+                self.turn_right(self.base_speed+7)
             elif instruction.name == Instruction.LEFT_TURN.name:
-                self.turn_left(self.base_speed)
+                self.turn_left(self.base_speed+7)
             elif instruction.name == Instruction.U_TURN.name:
-                print("cant do that right now")
+                print("adjustment needed")
+                self.move_forward(self.base_speed)
             i_saw = self.eye.what_do_i_see()
+
+        if instruction.name == Instruction.U_TURN.name:
+            time.sleep(0.2)
+            self.turn_left(self.base_speed, hard=True)
+            time.sleep(3)
         print("milestone")
 
 

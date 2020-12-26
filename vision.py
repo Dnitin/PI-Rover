@@ -65,7 +65,7 @@ class Vision:
     @staticmethod
     def __get_contour_centroid(contour):
         moments = cv2.moments(contour)
-        return int(moments['m10'] / moments['m00']), int(moments['m01'] / moments['m00'])
+        return int(moments ['m10'] / moments['m00']), int(moments['m01'] / moments['m00'])
 
     @staticmethod
     def __get_contour_sides(contour):

@@ -1,12 +1,7 @@
 #!/bin/bash
 usage(){ 
-	echo "Invalid option, Usage: $0 [-v|-r]"
+	echo "Invalid option, Usage: $0 [-v|-r|-l|-e|[-?|-h]]"
 }
-
-if (($# == 0)); then
-	usage
-	exit 2
-fi
 
 while getopts "vtle?h" opt; do
   case $opt in

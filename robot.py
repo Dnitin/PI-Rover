@@ -9,6 +9,7 @@ from wheel import Wheel
 from vision import Vision
 import sys
 
+
 class Robot:
     def __init__(self):
         GPIO.setmode(GPIO.BOARD)
@@ -85,6 +86,9 @@ class Robot:
             utils.show(chr(13))
         self.joy.close()
 
+    def is_intersection_visible(self, i_saw):
+        return i_saw[1][0] * i_saw[1][1] > 30000
+
     def explore_grid(self):
         time.sleep(2)
         instruction = Instruction.STRAIGHT
@@ -93,13 +97,22 @@ class Robot:
             i_saw = self.eye.what_do_i_see()
             if len(i_saw) == 0:
                 continue
-            if i_saw[2] > 10000 and i_saw[1][0]* i_saw[1][1] > 30000:
+            if self.is_intersection_visible(i_saw):
                 self.stop_movement()
-                time.sleep(3)
-                instructions = self.grid.get_next_instruction(False)
-                instruction = instructions[0]
-                print("intersection_seen"+str(instruction))
-                self.handle_intersection(instruction)
+                is_intersection = True
+                count = 1
+                while count > 0:
+                    self.move_forward(self.base_speed)
+                    time.sleep(0.1)
+                    i_saw = self.eye.what_do_i_see()
+                    is_intersection = is_intersection and self.is_intersection_visible(i_saw)
+                if is_intersection:
+                    instructions = self.grid.get_next_instruction(False)
+                    instruction = instructions[0]
+                    print("intersection_seen"+str(instruction))
+                    self.handle_intersection(instruction)
+                else:
+                    print("False Intersection")
             else:
                 self.__follow_line(i_saw[0])
 
@@ -136,20 +149,20 @@ class Robot:
 
     def handle_intersection(self, instruction):
         i_saw = self.eye.what_do_i_see()
-        while i_saw[2] > 10000 and i_saw[1][0] * i_saw[1][1] > 30000:
+        while self.is_intersection_visible(i_saw):
             if instruction.name == Instruction.STRAIGHT.name:
-                self.__follow_line(i_saw[0])
+                self.move_forward(self.base_speed)
             elif instruction.name == Instruction.RIGHT_TURN.name:
-                self.turn_right(self.top_speed+30)
+                self.turn_right(self.base_speed)
             elif instruction.name == Instruction.LEFT_TURN.name:
-                self.turn_left(self.top_speed+30)
+                self.turn_left(self.base_speed)
             elif instruction.name == Instruction.U_TURN.name:
                 print("cant do that right now")
             i_saw = self.eye.what_do_i_see()
         print("milestone")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     robot = Robot()
     for arg in sys.argv:
         if arg == 'explore_grid':

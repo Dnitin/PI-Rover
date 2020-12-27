@@ -64,17 +64,18 @@ class Robot:
 
     def test(self):
         self.joy = self.init_xbox()
+        utils.show("Connected:")
+        utils.show_if(self.joy.connected(), "Y", "N")
+        
         while not self.joy.Back():
+            speed = self.joy.rightTrigger()
             self.eye.what_do_i_see()
             dis = self.ping.distance()
-            utils.show(dis)
-            # Show connection status
-            utils.show("Connected:")
-            utils.show_if(self.joy.connected(), "Y", "N")
-
-            if self.joy.dpadUp() and dis > 15:
+            utils.show(dis, speed)
+            
+            if self.joy.dpadUp():
                 utils.show("UP")
-                self.move_forward(self.top_speed)
+                self.move_forward(speed*100)
 
             elif self.joy.dpadDown():
                 utils.show("BACK")

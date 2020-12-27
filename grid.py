@@ -195,15 +195,6 @@ class Grid:
                 self.c_dir = Direction.EAST
                 return [Instruction.U_TURN]
 
-    def __back_movement(self):    
-        if self.c_dir == Direction.SOUTH:
-            self.c_x -= 1
-        elif self.c_dir == Direction.NORTH:
-            self.c_x += 1
-        elif self.c_dir == Direction.EAST:
-            self.c_y -= 1
-        else:
-            self.c_y += 1
     
     def get_next_instruction(self, is_obstacle):
         self.__mark_node(is_obstacle)
@@ -211,7 +202,7 @@ class Grid:
         if is_obstacle:
             self.stack.pop()
             self.stack.pop()
-            self.__back_movement()
+            self.__turn180()
             return [Instruction.BACK]
 
         if self.__go_straight():

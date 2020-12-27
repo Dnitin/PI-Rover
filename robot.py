@@ -179,6 +179,7 @@ class Robot:
         while not self.is_intersection_visible(i_saw):
             self.move_back(self.base_speed)
             i_saw = self.eye.what_do_i_see()
+        time.sleep(0.2)
         self.stop_movement()
         print("exitttttttttttt")
 

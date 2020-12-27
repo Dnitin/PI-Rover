@@ -54,15 +54,14 @@ class Grid:
             else:
                 self.c_y -= 1
         else:
-            if self.movement == Movement.FORWARD:
-                if self.c_dir == Direction.SOUTH:
-                    self.c_x -= 1
-                elif self.c_dir == Direction.NORTH:
-                    self.c_x += 1
-                elif self.c_dir == Direction.EAST:
-                    self.c_y -= 1
-                else:
-                    self.c_y += 1
+            if self.c_dir == Direction.SOUTH:
+                self.c_x -= 1
+            elif self.c_dir == Direction.NORTH:
+                self.c_x += 1
+            elif self.c_dir == Direction.EAST:
+                self.c_y -= 1
+            else:
+                self.c_y += 1
             self.movement = Movement.FORWARD
 
         self.stack.append((self.c_x, self.c_y))
@@ -213,13 +212,13 @@ class Grid:
                 self.c_dir = Direction.EAST
                 return [Instruction.U_TURN]
 
-    
     def get_next_instruction(self, is_obstacle):
         self.__mark_node(is_obstacle)
 
         if is_obstacle:
             self.stack.pop()
             self.stack.pop()
+            self.movement = Movement.BACKWARD
             return [Instruction.BACK]
 
         if self.__go_straight():
@@ -243,24 +242,27 @@ class Grid:
 def print_grid(grid, x, y):
     for i in range(0,4):
         for j in range(0,6):
-            print(str(grid[i][j][1])+"    ", end="")
-            if i==x and j==y:
+            if i == x and j == y:
                 print(0, end="")
             else:
                 print(" ", end="")
+            print(str(grid[i][j][1])+"    ", end="")
         print()
         print()
+
 
 if __name__ == "__main__":
     grid = Grid(4, 6)
     grid.grid = np.full((4, 6, 3), False)
-    grid.grid[3][5][0] = True
-
-    #print_grid(grid.grid)
+    count = 0
     while True:
-        obs = grid.grid[grid.c_x][grid.c_y][0]
+        obs = count == 10
+        if obs:
+            print("yo")
+
         print_grid(grid.grid, grid.c_x, grid.c_y)
         ins = grid.get_next_instruction(obs)
         print(ins)
         if Instruction.STOP == ins:
             break
+        count += 1

@@ -1,7 +1,8 @@
-# open_cv_pi_bot
+# PI-ROVER
 
 A raspberry pi based robot !
 
+* Uses Open CV 3.7 for vision library
 * Can follow line
 * Can explore grid
 * Can be a simple wireless controlled rover (Xbox)

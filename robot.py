@@ -68,14 +68,13 @@ class Robot:
         utils.show_if(self.joy.connected(), "Y", "N")
         
         while not self.joy.Back():
-            speed = self.joy.rightTrigger()
             self.eye.what_do_i_see()
             dis = self.ping.distance()
-            utils.show(dis, speed)
+            utils.show(dis)
             
             if self.joy.dpadUp():
                 utils.show("UP")
-                self.move_forward(speed*100)
+                self.move_forward(self.top_speed)
 
             elif self.joy.dpadDown():
                 utils.show("BACK")
@@ -189,8 +188,11 @@ class Robot:
             self.handle_back_gear()
             return
 
+        count = 4
         i_saw = self.eye.what_do_i_see()
-        while self.is_intersection_visible(i_saw):
+        while self.is_intersection_visible(i_saw) or count > 0:
+            if not self.is_intersection_visible(i_saw):
+                count -= 1
             if instruction.name == Instruction.STRAIGHT.name:
                 self.move_forward(self.base_speed)
             elif instruction.name == Instruction.RIGHT_TURN.name:
@@ -211,7 +213,9 @@ class Robot:
 
 if __name__ == "__main__":
     robot = Robot()
-    for arg in sys.argv:
+    argv = sys.argv[1:]
+    print("Hello ! Starting .....")
+    for arg in argv:
         if arg == 'explore_grid':
             robot.explore_grid()
         elif arg == 'line_follower':

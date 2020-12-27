@@ -16,6 +16,11 @@ class Instruction(Enum):
         return False
 
 
+class Movement(Enum):
+    BACKWARD = "backwards"
+    FORWARD = "forwards"
+
+
 class Direction(Enum):
     NORTH = "negative_x"
     SOUTH = "positive_x"
@@ -32,20 +37,33 @@ class Grid:
         self.c_y = 0
         self.c_dir = direction
         self.stack = []
+        self.movement = Movement.FORWARD
 
     def reset_grid(self):
         self.grid = np.full((self.n, self.m, 3), False)
         self.stack = []
 
     def __mark_node(self, is_obstacle):
-        if self.c_dir == Direction.SOUTH:
-            self.c_x += 1
-        elif self.c_dir == Direction.NORTH:
-            self.c_x -= 1
-        elif self.c_dir == Direction.EAST:
-            self.c_y += 1
+        if self.movement == Movement.FORWARD:
+            if self.c_dir == Direction.SOUTH:
+                self.c_x += 1
+            elif self.c_dir == Direction.NORTH:
+                self.c_x -= 1
+            elif self.c_dir == Direction.EAST:
+                self.c_y += 1
+            else:
+                self.c_y -= 1
         else:
-            self.c_y -= 1
+            if self.movement == Movement.FORWARD:
+                if self.c_dir == Direction.SOUTH:
+                    self.c_x -= 1
+                elif self.c_dir == Direction.NORTH:
+                    self.c_x += 1
+                elif self.c_dir == Direction.EAST:
+                    self.c_y -= 1
+                else:
+                    self.c_y += 1
+            self.movement = Movement.FORWARD
 
         self.stack.append((self.c_x, self.c_y))
         self.grid[self.c_x][self.c_y][1] = True
@@ -202,7 +220,6 @@ class Grid:
         if is_obstacle:
             self.stack.pop()
             self.stack.pop()
-            self.__turn180()
             return [Instruction.BACK]
 
         if self.__go_straight():
